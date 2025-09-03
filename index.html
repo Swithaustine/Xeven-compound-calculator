@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compound Interest Calculator</title>
+<style>
+body { font-family: Arial; background:#f4f4f9; display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; }
+.container { background:white; padding:25px; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.1); width:420px; }
+h2 { text-align:center; }
+label { display:block; margin:10px 0 5px; font-weight:bold; }
+input { width:100%; padding:8px; margin-bottom:15px; border:1px solid #ccc; border-radius:8px; }
+button { width:100%; padding:10px; background:#4CAF50; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px; margin-top:5px; }
+button:hover { background:#45a049; }
+.result { margin-top:20px; background:#f9f9f9; padding:15px; border-radius:10px; font-size:15px; line-height:1.6; max-height:300px; overflow-y:auto; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+th, td { border:1px solid #ddd; padding:6px; text-align:center; }
+th { background:#eee; }
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Compound Interest Calculator</h2>
+
+<label for="principal">Initial Amount ($):</label>
+<input type="number" id="principal" value="50">
+
+<label for="rate">Daily Interest Rate (%):</label>
+<input type="number" id="rate" value="5">
+
+<label for="days">Number of Days:</label>
+<input type="number" id="days" value="30">
+
+<button id="calculateBtn">Calculate</button>
+<button id="downloadBtn">Download PDF</button>
+
+<div class="result" id="result"></div>
+</div>
+
+<!-- jsPDF and AutoTable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+let tableData = [];
+let finalBalance = 0;
+let summaryInfo = "";
+
+document.getElementById('calculateBtn').addEventListener('click', function() {
+    const principal = parseFloat(document.getElementById('principal').value);
+    const rate = parseFloat(document.getElementById('rate').value) / 100;
+    const days = parseInt(document.getElementById('days').value);
+
+    if (isNaN(principal) || isNaN(rate) || isNaN(days)) {
+        document.getElementById('result').innerHTML = "<b>Please fill all fields correctly.</b>";
+        return;
+    }
+
+    let balance = principal;
+    tableData = [];
+    let htmlOutput = `<b>Initial Deposit:</b> $${principal.toFixed(2)}<br>`;
+    htmlOutput += `<b>Daily Interest Rate:</b> ${(rate*100).toFixed(2)}%<br>`;
+    htmlOutput += `<b>Duration:</b> ${days} days<br><br>`;
+    htmlOutput += "<table><tr><th>Day</th><th>Starting Balance</th><th>Profit</th><th>Ending Balance</th></tr>";
+
+    for (let i = 1; i <= days; i++) {
+        let startingBalance = balance;
+        let profit = startingBalance * rate;
+        balance += profit;
+
+        htmlOutput += `<tr>
+        <td>${i}</td>
+        <td>$${startingBalance.toFixed(2)}</td>
+        <td>$${profit.toFixed(2)}</td>
+        <td>$${balance.toFixed(2)}</td>
+        </tr>`;
+
+        tableData.push([i, `$${startingBalance.toFixed(2)}`, `$${profit.toFixed(2)}`, `$${balance.toFixed(2)}`]);
+    }
+
+    htmlOutput += "</table>";
+    finalBalance = balance;
+    summaryInfo = `Initial Deposit: $${principal.toFixed(2)} | Daily Rate: ${(rate*100).toFixed(2)}% | Days: ${days}`;
+    htmlOutput += `<br><b>Final Balance after ${days} days: $${balance.toFixed(2)}</b>`;
+
+    document.getElementById('result').innerHTML = htmlOutput;
+});
+
+document.getElementById('downloadBtn').addEventListener('click', function() {
+    if (!tableData.length) {
+        alert("Please calculate first!");
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text("Compound Interest Calculation", 14, 15);
+
+    doc.setFontSize(11);
+    doc.text(summaryInfo, 14, 25);
+
+    doc.autoTable({
+        head: [['Day', 'Starting Balance', 'Profit', 'Ending Balance']],
+        body: tableData,
+        startY: 35,
+    });
+
+    doc.setFontSize(12);
+    doc.text(`Final Balance: $${finalBalance.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
+    doc.save("Compound_Interest_Table.pdf");
+});
+</script>
+</body>
+</html>
